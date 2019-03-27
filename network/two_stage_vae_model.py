@@ -132,44 +132,11 @@ class TwoStageVaeModel(object):
             gen_samples.append(x)
         gen_samples = np.concatenate(gen_samples, 0)
         return gen_samples[0:num_sample]
-            
+
 
 class Infogan(TwoStageVaeModel):
     def __init__(self, x, latent_dim=64, second_depth=3, second_dim=1024):
         super(Infogan, self).__init__(x, latent_dim, second_depth, second_dim)
-
-    def build_encoder1(self):
-        with tf.variable_scope('encoder'):
-            y = self.x 
-            y = tf.nn.relu(batch_norm(tf.layers.conv2d(y, 64, 4, 2, 'same'), self.is_training, 'bn1'))
-            y = tf.nn.relu(batch_norm(tf.layers.conv2d(y, 128, 4, 2, 'same'), self.is_training, 'bn2'))
-
-            y = tf.layers.flatten(y)
-            y = tf.layers.dense(y, 1024, tf.nn.relu, name='fc1')
-            self.mu_z = tf.layers.dense(y, self.latent_dim, name='mu_z')
-            self.logsd_z = tf.layers.dense(y, self.latent_dim, name='logsd_z')
-            self.sd_z = tf.exp(self.logsd_z)
-            self.z = self.mu_z + tf.random_normal([self.batch_size, self.latent_dim]) * self.sd_z
-
-    def build_decoder1(self):
-        with tf.variable_scope('decoder'):
-            y = self.z 
-            y = tf.layers.dense(y, 1024, tf.nn.relu, name='fc1')
-            final_side_length = self.x.get_shape().as_list()[1]
-            y = tf.nn.relu(tf.layers.dense(y, 128 * (final_side_length // 4) * (final_side_length // 4), name='fc2'))
-            y = tf.reshape(y, [self.batch_size, final_side_length // 4, final_side_length // 4, 128])
-
-            y = tf.nn.relu(batch_norm(tf.layers.conv2d_transpose(y, 64, 4, 2, 'same'), self.is_training, 'bn1'))
-            data_depth = self.x.get_shape().as_list()[-1]
-            self.x_hat = tf.nn.sigmoid(tf.layers.conv2d_transpose(y, data_depth, 4, 2, 'same'))
-
-            self.loggamma_x = tf.get_variable('loggamma_x', [], tf.float32, tf.zeros_initializer())
-            self.gamma_x = tf.exp(self.loggamma_x)
-
-
-class InfoganSn(TwoStageVaeModel):
-    def __init__(self, x, latent_dim=64, second_depth=3, second_dim=1024):
-        super(InfoganSn, self).__init__(x, latent_dim, second_depth, second_dim)
 
     def build_encoder1(self):
         with tf.variable_scope('encoder'):

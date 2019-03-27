@@ -9,6 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt 
 from scipy.misc import imsave, imresize
+from fid_score import evaluate_fid_score
 import pickle
 from dataset import load_dataset, load_test_dataset
 
@@ -93,6 +94,18 @@ def main():
     plt.imsave(os.path.join(exp_folder, 'gen1_sample.jpg'), img_gens1_sample)
     plt.imsave(os.path.join(exp_folder, 'gen2_sample.jpg'), img_gens2_sample)
 
+    # calculating FID score
+    tf.reset_default_graph()
+    fid_recon = evaluate_fid_score(img_recons.copy(), args.dataset, args.root_folder, True)
+    fid_gen1 = evaluate_fid_score(img_gens1.copy(), args.dataset, args.root_folder, True)
+    fid_gen2 = evaluate_fid_score(img_gens2.copy(), args.dataset, args.root_folder, True)
+    print('Reconstruction Results:')
+    print('FID = {:.4F}\n'.format(fid_recon))
+    print('Generation Results (First Stage):')
+    print('FID = {:.4f}\n'.format(fid_gen1))
+    print('Generation Results (Second Stage):')
+    print('FID = {:.4f}\n'.format(fid_gen2))
+
 
 def stich_imgs(x, img_per_row=10, img_per_col=10):
     x_shape = np.shape(x)
@@ -154,6 +167,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print(args)
+#    args.dataset = 'cifar10'
+#    args.exp_name = 'infogan_400_800'
+#    args.val = True
 
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)

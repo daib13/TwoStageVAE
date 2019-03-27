@@ -56,7 +56,7 @@ python demo.py --dataset [DATASET] --network-structure [NETWORK] --exp-name [EXP
 The argument `--exp-name` allows you to set up your experiemnt ID. It will make a folder `./experiments/[DATASET]/[EXP]` to put all the output files and images. If you only want to test the model, add `--val` in the command line.
 
 * Datasets: Use lowercases. You can select from: `mnist, fashion, cifar10` and `celeba`.
-* Network structure: You can select from `Infogan, InfoganSn, Wae` and `Resnet`. To implement your own network structures, you can add a new derived class of `TwoStageVaeModel` in `./network/two_stage_vae_model.py` and just implement the `build_encoder1` and `build_decoder1` functions. 
+* Network structure: You can select from `Infogan, Wae` and `Resnet`. To implement your own network structures, you can add a new derived class of `TwoStageVaeModel` in `./network/two_stage_vae_model.py` and just implement the `build_encoder1` and `build_decoder1` functions. 
 
 ## Generated samples
 To reproduce the following results with Resnet architecture, run
