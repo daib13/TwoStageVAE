@@ -58,6 +58,13 @@ The argument `--exp-name` allows you to set up your experiemnt ID. It will make 
 * Datasets: Use lowercases. You can select from: `mnist, fashion, cifar10` and `celeba`.
 * Network structure: You can select from `Infogan, Wae` and `Resnet`. To implement your own network structures, you can add a new derived class of `TwoStageVaeModel` in `./network/two_stage_vae_model.py` and just implement the `build_encoder1` and `build_decoder1` functions. 
 
+## How to train the second stage VAE
+When training the second stage VAE, the current version feeds the original image into the encoder of the first VAE and then randomly sample a z and feed it into the second VAE. So we need a forward pass of the first encoder and then both forward and backward pass of the second VAE.
+
+Actually we can save all the $\mu_z$ and $\sigma_z$. When training the second stage VAE, randomly pick up a batch and sample z from $N(\mu_z, \text{diag}[\sigma_z])$. This can save a lot of training time.
+
+We will update the code to the faster version soon (in one week).
+
 ## Generated samples
 To reproduce the following results with Resnet architecture, run
 ```
