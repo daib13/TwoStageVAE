@@ -92,11 +92,24 @@ class TwoStageVaeModel(object):
             self.loggamma_z = tf.get_variable('loggamma_z', [], tf.float32, tf.zeros_initializer())
             self.gamma_z = tf.exp(self.loggamma_z)
 
-    def step(self, stage, x_batch, lr, sess, writer=None, write_iteration=600):
+    def extract_posterior(self, sess, x):
+        num_sample = np.shape(x)[0]
+        num_iter = math.ceil(float(num_sample) / float(self.batch_size))
+        x_extend = np.concatenate([x, x[0:self.batch_size]], 0)
+        mu_z, sd_z = [], []
+        for i in range(num_iter):
+            mu_z_batch, sd_z_batch = sess.run([self.mu_z, self.sd_z], feed_dict={self.raw_x: x_extend[i*self.batch_size:(i+1)*self.batch_size], self.is_training: False})
+            mu_z.append(mu_z_batch)
+            sd_z.append(sd_z_batch)
+        mu_z = np.concatenate(mu_z, 0)[0:num_sample]
+        sd_z = np.concatenate(sd_z, 0)[0:num_sample]
+        return mu_z, sd_z
+
+    def step(self, stage, input_batch, lr, sess, writer=None, write_iteration=600):
         if stage == 1:
-            loss, summary, _ = sess.run([self.loss1, self.summary1, self.opt1], feed_dict={self.raw_x: x_batch, self.lr: lr, self.is_training: True})
+            loss, summary, _ = sess.run([self.loss1, self.summary1, self.opt1], feed_dict={self.raw_x: input_batch, self.lr: lr, self.is_training: True})
         elif stage == 2:
-            loss, summary, _ = sess.run([self.loss2, self.summary2, self.opt2], feed_dict={self.raw_x: x_batch, self.lr: lr, self.is_training: True})
+            loss, summary, _ = sess.run([self.loss2, self.summary2, self.opt2], feed_dict={self.z: input_batch, self.lr: lr, self.is_training: True})
         else:
             raise Exception('Wrong stage {}.'.format(stage))
         global_step = self.global_step.eval(sess)

@@ -60,13 +60,19 @@ def main():
         saver.save(sess, os.path.join(model_path, 'stage1'))
 
         # second stage
+        mu_z, sd_z = model.extract_posterior(sess, x)
+        idx = np.arange(num_sample)
         for epoch in range(args.epochs2):
-            np.random.shuffle(x)
+            np.random.shuffle(idx)
+            mu_z = mu_z[idx]
+            sd_z = sd_z[idx]
             lr = args.lr2 if args.lr_epochs2 <= 0 else args.lr2 * math.pow(args.lr_fac2, math.floor(float(epoch) / float(args.lr_epochs2)))
             epoch_loss = 0
             for j in range(iteration_per_epoch):
-                image_batch = x[j*args.batch_size:(j+1)*args.batch_size]
-                loss = model.step(2, image_batch, lr, sess, writer, args.write_iteration)
+                mu_z_batch = mu_z[j*args.batch_size:(j+1)*args.batch_size]
+                sd_z_batch = sd_z[j*args.batch_size:(j+1)*args.batch_size]
+                z_batch = mu_z_batch + sd_z_batch * np.random.normal(0, 1, [args.batch_size, args.latent_dim])
+                loss = model.step(2, z_batch, lr, sess, writer, args.write_iteration)
                 epoch_loss += loss 
             epoch_loss /= iteration_per_epoch
 
@@ -167,9 +173,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print(args)
-#    args.dataset = 'cifar10'
-#    args.exp_name = 'infogan_400_800'
-#    args.val = True
 
     os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
