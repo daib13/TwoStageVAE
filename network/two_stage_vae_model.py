@@ -7,13 +7,14 @@ from network.util import *
 
 
 class TwoStageVaeModel(object):
-    def __init__(self, x, latent_dim=64, second_depth=3, second_dim=1024):
+    def __init__(self, x, latent_dim=64, second_depth=3, second_dim=1024, cross_entropy_loss=False):
         self.raw_x = x
         self.x = tf.cast(self.raw_x, tf.float32) / 255.0 
         self.batch_size = x.get_shape().as_list()[0]
         self.latent_dim = latent_dim
         self.second_dim = second_dim 
         self.second_depth = second_depth
+        self.cross_entropy_loss = cross_entropy_loss
 
         self.is_training = tf.placeholder(tf.bool, [], 'is_training')
 
@@ -34,7 +35,10 @@ class TwoStageVaeModel(object):
         HALF_LOG_TWO_PI = 0.91893
 
         self.kl_loss1 = tf.reduce_sum(tf.square(self.mu_z) + tf.square(self.sd_z) - 2 * self.logsd_z - 1) / 2.0 / float(self.batch_size)
-        self.gen_loss1 = tf.reduce_sum(tf.square((self.x - self.x_hat) / self.gamma_x) / 2.0 + self.loggamma_x + HALF_LOG_TWO_PI) / float(self.batch_size)
+        if not self.cross_entropy_loss:
+            self.gen_loss1 = tf.reduce_sum(tf.square((self.x - self.x_hat) / self.gamma_x) / 2.0 + self.loggamma_x + HALF_LOG_TWO_PI) / float(self.batch_size)
+        else:
+            self.gen_loss1 = -tf.reduce_sum(self.x * tf.log(tf.maximum(self.x_hat, 1e-8)) + (1-self.x) * tf.log(tf.maximum(1-self.x_hat, 1e-8))) / float(self.batch_size)
         self.loss1 = self.kl_loss1 + self.gen_loss1 
 
         self.kl_loss2 = tf.reduce_sum(tf.square(self.mu_u) + tf.square(self.sd_u) - 2 * self.logsd_u - 1) / 2.0 / float(self.batch_size)
@@ -148,8 +152,8 @@ class TwoStageVaeModel(object):
 
 
 class Infogan(TwoStageVaeModel):
-    def __init__(self, x, latent_dim=64, second_depth=3, second_dim=1024):
-        super(Infogan, self).__init__(x, latent_dim, second_depth, second_dim)
+    def __init__(self, x, latent_dim=64, second_depth=3, second_dim=1024, cross_entropy_loss=False):
+        super(Infogan, self).__init__(x, latent_dim, second_depth, second_dim, cross_entropy_loss)
 
     def build_encoder1(self):
         with tf.variable_scope('encoder'):
@@ -188,8 +192,8 @@ class Infogan(TwoStageVaeModel):
 
 
 class Wae(TwoStageVaeModel):
-    def __init__(self, x, latent_dim=64, second_depth=3, second_dim=1024):
-        super(Wae, self).__init__(x, latent_dim, second_depth, second_dim)
+    def __init__(self, x, latent_dim=64, second_depth=3, second_dim=1024, cross_entropy_loss=False):
+        super(Wae, self).__init__(x, latent_dim, second_depth, second_dim, cross_entropy_loss)
 
     def build_encoder1(self):
         with tf.variable_scope('encoder'):
@@ -225,14 +229,14 @@ class Wae(TwoStageVaeModel):
 
 
 class Resnet(TwoStageVaeModel):
-    def __init__(self, x, num_scale, block_per_scale=1, depth_per_block=2, kernel_size=3, base_dim=16, fc_dim=512, latent_dim=64, second_depth=3, second_dim=1024):
+    def __init__(self, x, num_scale, block_per_scale=1, depth_per_block=2, kernel_size=3, base_dim=16, fc_dim=512, latent_dim=64, second_depth=3, second_dim=1024, cross_entropy_loss=False):
         self.num_scale = num_scale
         self.block_per_scale = block_per_scale
         self.depth_per_block = depth_per_block
         self.kernel_size = kernel_size 
         self.base_dim = base_dim 
         self.fc_dim = fc_dim
-        super(Resnet, self).__init__(x, latent_dim, second_depth, second_dim)
+        super(Resnet, self).__init__(x, latent_dim, second_depth, second_dim, cross_entropy_loss)
 
     def build_encoder1(self):
         with tf.variable_scope('encoder'):

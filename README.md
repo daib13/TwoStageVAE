@@ -57,6 +57,7 @@ The argument `--exp-name` allows you to set up your experiemnt ID. It will make 
 
 * Datasets: Use lowercases. You can select from: `mnist, fashion, cifar10` and `celeba`.
 * Network structure: You can select from `Infogan, Wae` and `Resnet`. To implement your own network structures, you can add a new derived class of `TwoStageVaeModel` in `./network/two_stage_vae_model.py` and just implement the `build_encoder1` and `build_decoder1` functions. 
+* Cross entropy loss: If you want to run the experiments with cross entropy loss (VAE(cross-entr.) method in the paper), you can add `--cross-entropy-loss` in the command line.
 
 ## Generated samples
 To reproduce the following results with Resnet architecture, run

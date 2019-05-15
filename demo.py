@@ -32,9 +32,9 @@ def main():
 
     # model
     if args.network_structure != 'Resnet':
-        model = eval(args.network_structure)(input_x, args.latent_dim, args.second_depth, args.second_dim)
+        model = eval(args.network_structure)(input_x, args.latent_dim, args.second_depth, args.second_dim, args.cross_entropy_loss)
     else:
-        model = Resnet(input_x, args.num_scale, args.block_per_scale, args.depth_per_block, args.kernel_size, args.base_dim, args.fc_dim, args.latent_dim, args.second_depth, args.second_dim)
+        model = Resnet(input_x, args.num_scale, args.block_per_scale, args.depth_per_block, args.kernel_size, args.base_dim, args.fc_dim, args.latent_dim, args.second_depth, args.second_dim, args.cross_entropy_loss)
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
     writer = tf.summary.FileWriter(exp_folder, sess.graph)
@@ -168,6 +168,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr2', type=float, default=0.0001)
     parser.add_argument('--lr-epochs2', type=int, default=300)
     parser.add_argument('--lr-fac2', type=float, default=0.5)
+    parser.add_argument('--cross-entropy-loss', default=False, action='store_true')
     
     parser.add_argument('--val', default=False, action='store_true')
 

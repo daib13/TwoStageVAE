@@ -2,7 +2,7 @@ import numpy as np
 import pickle
 from mnist import MNIST
 import os
-from scipy.misc import imread, imresize, imsave
+from scipy.misc import imread, imresize, imsave, bytescale
 import pickle
 ROOT_FOLDER = './data'
 
@@ -40,7 +40,6 @@ def load_fashion_data(flag='training'):
     images_array = np.concatenate(images_array, 0)
     return images_array.astype(np.uint8)
 
-
 def load_cifar10_data(flag='training'):
     if flag == 'training':
         data_files = ['data/cifar10/cifar-10-batches-py/data_batch_1', 'data/cifar10/cifar-10-batches-py/data_batch_2', 'data/cifar10/cifar-10-batches-py/data_batch_3', 'data/cifar10/cifar-10-batches-py/data_batch_4', 'data/cifar10/cifar-10-batches-py/data_batch_5']
@@ -53,6 +52,23 @@ def load_cifar10_data(flag='training'):
         img_data = np.transpose(np.reshape(img_data, [-1, 3, 32, 32]), [0, 2, 3, 1])
         x.append(img_data)
     x = np.concatenate(x, 0)
+    num_imgs = np.shape(x)[0]
+    
+    # save to jpg file
+    img_folder = os.path.join('data/cifar10', flag)
+    if not os.path.exists(img_folder):
+        os.mkdir(img_folder)
+    for i in range(num_imgs):
+        imsave(os.path.join(img_folder, str(i) + '.jpg'), x[i])
+
+    # save to npy
+    x = []
+    for i in range(num_imgs):
+        img_file = os.path.join(img_folder, str(i) + '.jpg')
+        img = imread(img_file, mode='RGB')
+        x.append(np.reshape(img, [1, 32, 32, 3]))
+    x = np.concatenate(x, 0)
+
     return x.astype(np.uint8)
 
 
@@ -161,30 +177,15 @@ def preprocess_fashion():
     np.save(os.path.join('data', 'fashion', 'test.npy'), x_test)
 
 
-def preprocess_imagenet():
-    for i in range(1, 11):
-        train_file = 'train_data_batch_' + str(i)
-        fid = open(os.path.join('data', 'imagenet', train_file), 'rb')
-        x_batch = pickle.load(fid)
-        fid.close()
-        x_batch = x_batch['data']
-        x_batch = np.reshape(x_batch, [np.shape(x_batch)[0], 3, 64, 64])
-        x_batch = np.transpose(x_batch, [0, 2, 3, 1])
-        np.save(os.path.join('data', 'imagenet', 'train' + str(i-1) + '.npy'), x_batch)
-    fid = open(os.path.join('data', 'imagenet', 'val_data'), 'rb')
-    x_batch = pickle.load(fid)
-    fid.close()
-    x_batch = x_batch['data']
-    x_batch = np.reshape(x_batch, [np.shape(x_batch)[0], 3, 64, 64])
-    x_batch = np.transpose(x_batch, [0, 2, 3, 1])
-    np.save(os.path.join('data', 'imagenet', 'test.npy'), x_batch)
-    
-
+def unpickle(file):
+    import pickle
+    with open(file, 'rb') as fo:
+        dic = pickle.load(fo, encoding='bytes')
+    return dic
 
 if __name__ == '__main__':
     preprocess_celeba()
     preprocess_celeba140()
-#    preprocess_imagenet()
     preprocess_mnist()
     preprocess_fashion()
     preporcess_cifar10()
